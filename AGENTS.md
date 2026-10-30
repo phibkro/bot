@@ -15,7 +15,7 @@ spec → code → PR   (1:1)
 - **Freeze the spec when its PR opens.** The PR body is the report and ends with an empty `## Review rounds`; reviewers judge the plan, the code and their agreement.
 - **Never block on a merge.** Stack the next branch on the one below.
 - **Worktrees:** `/run/current-system/sw/bin/git worktree add .worktrees/<name> -b <branch>` (full path: a bare `git worktree` is rewritten by the harness). One writer per working directory. Commit by pathspec.
-- **Review loop and merge script:** the scripts (`merge.sh`, `record-round.sh`) are not copied here yet; spec 0000, step 2, decides whether this repository gets them.
+- **Review loop and merge script:** step 2 copies `merge.sh` and `record-round.sh` into `.agents/skills/review-pr/` from `phibkro/pg-txmode`, changing only the provenance header (spec 0000, Revisions 2). Until then this repository has no copy.
 
 ## What this repository is allowed to hold
 

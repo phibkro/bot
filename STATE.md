@@ -8,8 +8,9 @@ Spec 0000 ([`docs/specs/0000-release-bot-v1.md`](docs/specs/0000-release-bot-v1.
 
 Next:
 
-- The lead resolves the open forks O1 to O8 of spec 0000 (O1 PiHarness or not, O2 App visibility, O3 where the secrets live, O4 version-PR recognition, O5 notification channel, O6 record authors, O7 branch protection on `vektorprogrammet-reimagined`, O8 GitHub-side hardening) as Revisions entries.
-- Step 2: the implementation against the frozen spec as a stacked PR (rules package with the contract test against `merge.sh`, webhook ingress, Durable Object, Alchemy stack, `verify-bot`, the `effect-house` overlay and exception registry).
+- Review of the spec PR (a fresh reviewer, assigned by the lead).
+- Open forks resolved on 2026-10-30 (spec 0000, Revisions 1): O1 plain Durable Object, PiHarness is spec 0001; O2 one App owned by `phibkro`, installable by any account, account-id allowlist; O6 a pass is trusted only from account id 71797726; O3, O4, O5, O8 as recommended. **O7** (branch protection on `vektorprogrammet-reimagined`) stays with the lead and the operator.
+- Step 2: the implementation against the spec as a stacked PR (rules package with the contract test against `merge.sh`, webhook ingress, Durable Object, Alchemy stack, `verify-bot`, the `effect-house` overlay and exception registry, the review scripts copied from `phibkro/pg-txmode`).
 
 Blocked:
 

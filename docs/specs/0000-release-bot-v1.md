@@ -457,4 +457,16 @@ Inferences left for step 2 to test: the `StatusContext` conclusion in `statusChe
 
 ## Revisions
 
-None yet. The spec is frozen when its PR opens; later changes are dated entries here.
+Entries are dated and never replace the text above; where an entry resolves an **Open** fork, the entry is the decision and the fork's text stays as the record of the options.
+
+1. **2026-10-30, resolution of the open forks (the lead, relaying the operator).**
+   - **O1: plain Durable Object in v1.** PiHarness becomes spec 0001, written when there is a concrete model job. The `Narrator` seam stays reserved (the `Notifier` accepts a message, so a narrator can later supply a paragraph). Consequences for this spec: D11's host shape is Alchemy's Effect-native `DurableObject` with its own `alarm` handler; the B column of the O1 table and falsifier **F18** do not apply to v1 and are not built (F18 returns with spec 0001); the Threat model row "Prompt injection in B" describes the constraint spec 0001 must meet.
+   - **O2: option 1.** One App owned by `phibkro`, installable by any account, with an allowlist by numeric account id (`71797726` for `phibkro`, `349117663` for `tsukuri-labs`) checked in the Worker before the Durable Object and before any token mint (F15). "Operator steps" 2 sets "Where can this GitHub App be installed" to **Any account**.
+   - **O6: a pass is trusted only from the operator account, numeric id `71797726`.** The record-author allowlist (deviation V1) holds that one id.
+   - **O3, O4, O5, O8 accepted as recommended:** Worker secrets from stdin with Wrangler as a registered house exception until `cf` can set a single secret (O3); version PRs recognised by a declared title pattern, mode `publish` only (O4); the PR comment is the v1 notification (O5); tag and branch-creation rulesets are optional hardening (O8).
+   - **Rollout:** observe mode is the default for all five repositories at deploy (a decision, not a fork).
+   - **Licence:** `LICENSE` keeps the all-rights-reserved text.
+   - **OptMem port (D12):** clean-room implementation from the described algorithm, or the author's written permission; no code is copied from `VictorTaelin/OptMem` while it has no licence file.
+   - **O7 stays open** for the lead to raise with the operator; it does not block observe mode.
+   - "Operator steps" 1 ("Decide O1 to O8") is superseded by this entry except for O7.
+2. **2026-10-30, delivery.** The spec-only PR stays as it is, with the exception declared under "Delivery"; the implementation is a stacked PR against this spec, with its own Revisions entries. In step 2 `merge.sh` and `record-round.sh` are copied into `.agents/skills/review-pr/` **from `phibkro/pg-txmode`** (blobs `40d6be4d7897d56d369af7275e99e4926f933a02` and `646bb10606f1b6683908e8e0f0171ec611032f8b` at `d9b4142d`), changed only in the provenance header, so this repository's own PRs use the review loop that the bot's contract test pins.
