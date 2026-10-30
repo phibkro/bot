@@ -1,0 +1,5 @@
+# Provenance: adapted from phibkro/pg-txmode @ 23be53c0c66a129540350697253b5c19abde3171 (.gitleaks.toml). Deviation: the title.
+title = "bot secret checks"
+
+[extend]
+useDefault = true

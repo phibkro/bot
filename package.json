@@ -1,0 +1,62 @@
+{
+  "name": "bot",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "tools/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "ready": "bun run check && bun run check:effect && bun run check:exceptions && bun run check:docs && bun run test && bun run build && bun run secrets",
+    "check": "vp check",
+    "check:effect": "effect-tsgo tsc -p packages/service && effect-tsgo tsc -p apps/bot",
+    "check:exceptions": "bun tools/quality/checkExceptions.ts",
+    "check:docs": "bun packages/rules/scripts/checklist.ts --check",
+    "docs:gen": "bun packages/rules/scripts/checklist.ts",
+    "test": "vp run -r --no-cache test",
+    "build": "vp run -r --no-cache build",
+    "smoke": "cd apps/bot && bunx vp test smoke",
+    "secrets": "gitleaks git --config .gitleaks.toml --redact",
+    "commitlint": "commitlint"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@effect/tsgo": "catalog:",
+    "@phibkro/oxlint-effect-plugin": "0.2.0",
+    "oxlint-plugin-complexity": "4.0.0",
+    "typescript": "catalog:",
+    "ultracite": "8.0.1",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "overrides": {
+    "vite": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "bun",
+      "version": "^1.4.2",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "catalog": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.2.0",
+    "vite-plus": "1.2.0",
+    "typescript": "7.0.2",
+    "@types/node": "^26.6.5",
+    "oxc-parser": "0.153.0",
+    "zod": "4.6.7",
+    "effect": "4.1.0",
+    "@effect/vitest": "4.1.0",
+    "@effect/tsgo": "0.63.0",
+    "@effect/sql-sqlite-do": "4.1.0",
+    "@effect/sql-sqlite-bun": "4.1.0",
+    "miniflare": "4.20260730.0",
+    "@cloudflare/workers-types": "5.20261030.1"
+  }
+}

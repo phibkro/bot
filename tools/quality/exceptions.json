@@ -1,0 +1,24 @@
+{
+  "description": "Registered suppressions. Every live suppression directive (oxlint, eslint, ts-expect-error, ts-ignore, ts-nocheck, @effect-diagnostics) must match an entry by file and directive, and every entry needs a live suppression. An entry names its scope, reason, native alternatives examined, owner, versions and retirement trigger.",
+  "exceptions": [
+    {
+      "id": "EX-0001",
+      "scope": {
+        "files": ["apps/bot/src/worker.ts"],
+        "directives": ["@effect-diagnostics", "oxlint-disable"]
+      },
+      "reason": "The Cloudflare Workers host ABI is Promise-based: a Durable Object's RPC methods and `alarm()` and a Worker's `fetch` are `async` methods that the runtime calls. `asyncFunction:off` applies to this one file, the boundary adapter between that ABI and one ManagedRuntime per host (spec 0000, D11 and Revisions 5); every method body is one `runtime.runPromise` of an Effect, so no domain logic is async. The file-level `oxlint-disable` covers the same host: `effect/no-native-promise-control-flow` and `effect/no-premature-execution` (the host builds its two ManagedRuntimes), and the global `Cloudflare.Env` augmentation that types `env` from `cloudflare:workers` (`no-namespace`, `no-empty-interface`, `no-empty-object-type`, `consistent-type-imports`).",
+      "nativeAlternativesExamined": [
+        "Alchemy v2's Effect-native Durable Object (`DurableObjectShape` with Effect-valued `fetch` and `alarm`): it hides the async ABI, but `Lifecycle.install(host)` of PiHarness (spec 0001) needs a real `cloudflare:workers` DurableObject class, and a local workerd smoke test needs no Alchemy tooling with a plain class.",
+        "Effect.promise / Effect.callback around the handlers: they wrap calls from Effect into Promises, the reverse of what the host needs; the host must return Promises to the platform."
+      ],
+      "owner": "apps/bot",
+      "versions": {
+        "effect": "4.1.0",
+        "@effect/tsgo": "0.63.0",
+        "alchemy": "2.0.0-beta.84"
+      },
+      "retirementTrigger": "Cloudflare's runtime accepts Effect-valued handlers directly, or this host moves to Alchemy's Effect-native Durable Object (if spec 0001 does not need the class form)."
+    }
+  ]
+}
