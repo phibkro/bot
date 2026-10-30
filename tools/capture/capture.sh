@@ -19,8 +19,9 @@ gh api "repos/$repo/pulls/18" | jq '{number, title, state, draft, merged, merge_
   user: {id: .user.id, type: .user.type}, head: {sha: .head.sha, ref: .head.ref, repo: {full_name: .head.repo.full_name}},
   base: {ref: .base.ref, repo: {full_name: .base.repo.full_name, default_branch: .base.repo.default_branch}}}' >"$out/github/pull-merged.json"
 
-cmd "gh api repos/phibkro/bot/pulls/1/reviews | jq <project review fields>"
-gh api "repos/phibkro/bot/pulls/1/reviews" | jq '[.[] | {id, body, state, submitted_at, commit_id, user: {id: .user.id, type: .user.type}}]' >"$out/github/reviews-record.json"
+cmd "gh api repos/phibkro/bot/pulls/1/reviews | jq <project review fields; body reduced to the marker line and a one-line title>"
+# The bot reads only the first line of a record (V2). The review text itself is not kept: it names reviewers and discusses the plan.
+gh api "repos/phibkro/bot/pulls/1/reviews" | jq '[.[] | (.body | split("\n")[0]) as $marker | ($marker | capture("n=(?<n>[0-9]+) head=(?<head>[0-9a-f]{40}) verdict=(?<verdict>[a-z]+)")) as $c | {id, body: ($marker + "\n## Review round " + $c.n + " on `" + $c.head[0:7] + "`: " + $c.verdict + "\n"), state, submitted_at, commit_id, user: {id: .user.id, type: .user.type}}]' >"$out/github/reviews-record.json"
 
 cmd "gh api repos/$repo/compare/$old...$tip (main is an ancestor of the head: behind_by 0)"
 gh api "repos/$repo/compare/$old...$tip" | jq '{status, ahead_by, behind_by, total_commits, merge_base_commit: {sha: .merge_base_commit.sha}, files: [.files[] | {filename, status} + (if .previous_filename then {previous_filename} else {} end)]}' >"$out/github/compare-ahead.json"

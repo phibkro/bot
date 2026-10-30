@@ -3,6 +3,7 @@ import { createHmac, generateKeyPairSync, randomBytes } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import type { Readable } from "node:stream";
 
 import { matchOperation } from "@bot/service";
 import { Miniflare, Response as MiniflareResponse } from "miniflare";
@@ -51,6 +52,11 @@ const seen: Seen[] = [];
 /** Resolved when the bot reads the last of the facts it decides on (the comparison with the default branch): the alarm ran. */
 const factsRead = Promise.withResolvers<void>();
 let root = "";
+let keyBody = "";
+
+/** Everything workerd wrote to its stdout and stderr, for the secret search of F12. */
+const runtimeOutput: string[] = [];
+
 let mf: Miniflare | undefined;
 
 /** The fake GitHub: the shapes are the captured ones; the one pull request is open, reviewed (a pass by the operator) and green. */
@@ -164,6 +170,11 @@ beforeAll(() => {
     publicKeyEncoding: { format: "pem", type: "spki" },
   });
 
+  keyBody = privateKey
+    .split("\n")
+    .filter((line) => line !== "" && !line.startsWith("-----"))
+    .join("");
+
   mf = new Miniflare({
     bindings: {
       GITHUB_APP_CLIENT_ID: "Iv1.smoke",
@@ -175,6 +186,13 @@ beforeAll(() => {
     compatibilityFlags: ["nodejs_compat"],
     durableObjects: {
       RELEASE_BOT: { className: "ReleaseBot", useSQLite: true },
+    },
+    handleRuntimeStdio: (stdout: Readable, stderr: Readable) => {
+      for (const stream of [stdout, stderr]) {
+        stream.on("data", (chunk: Buffer) => {
+          runtimeOutput.push(String(chunk));
+        });
+      }
     },
     modules: [
       {
@@ -306,4 +324,25 @@ describe("the Worker and the Durable Object in workerd", () => {
         .map((request) => `${request.method} ${new URL(request.url).pathname}`)
     ).toEqual(["POST /app/installations/5/access_tokens"]);
   }, 30_000);
+
+  test("F12: no secret value is in workerd's output or in the audit log after the journey", async () => {
+    const audit = await auditOf();
+    const haystack = `${runtimeOutput.join("")}\n${JSON.stringify(audit)}`;
+    // The journey ran (the audit holds the verdict), so an empty haystack cannot pass.
+    expect(haystack).toContain("merge-verdict");
+
+    const secrets = [
+      webhookSecret,
+      keyBody.slice(0, 60),
+      "PRIVATE KEY",
+      "ghs_smoke",
+    ];
+
+    const found = (text: string): string[] =>
+      secrets.filter((secret) => text.includes(secret));
+
+    expect(found(haystack)).toEqual([]);
+    // Control: the same search finds a secret that is planted in the text.
+    expect(found(`${haystack}\n${webhookSecret}`)).toEqual([webhookSecret]);
+  });
 });
