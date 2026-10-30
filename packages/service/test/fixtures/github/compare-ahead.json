@@ -1,0 +1,115 @@
+{
+  "status": "ahead",
+  "ahead_by": 3,
+  "behind_by": 0,
+  "total_commits": 3,
+  "merge_base_commit": {
+    "sha": "e74872140f547e1c205e442f186192d3cd8bb27d"
+  },
+  "files": [
+    {
+      "filename": ".changeset/pre/harness-published.md",
+      "status": "added"
+    },
+    {
+      "filename": ".changeset/pre/harness-watchdog.md",
+      "status": "added"
+    },
+    {
+      "filename": ".github/workflows/release.yml",
+      "status": "modified"
+    },
+    {
+      "filename": "AGENTS.md",
+      "status": "modified"
+    },
+    {
+      "filename": "bun.lock",
+      "status": "modified"
+    },
+    {
+      "filename": "docs/evidence/harness-hardening/README.md",
+      "status": "added"
+    },
+    {
+      "filename": "docs/evidence/harness-publish/README.md",
+      "status": "modified"
+    },
+    {
+      "filename": "docs/specs/0006-release.md",
+      "status": "modified"
+    },
+    {
+      "filename": "docs/specs/0007-harness-publish.md",
+      "status": "modified"
+    },
+    {
+      "filename": "docs/specs/0008-harness-hardening.md",
+      "status": "added"
+    },
+    {
+      "filename": "packages/core/CHANGELOG.md",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/core/package.json",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/effect/CHANGELOG.md",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/effect/package.json",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/harness/CHANGELOG.md",
+      "status": "added"
+    },
+    {
+      "filename": "packages/harness/README.md",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/harness/package.json",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/harness/src/stack.ts",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/harness/test/orphans.test.ts",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/harness/test/watchdog.test.ts",
+      "status": "added"
+    },
+    {
+      "filename": "packages/lint/CHANGELOG.md",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/lint/package.json",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/pg/CHANGELOG.md",
+      "status": "modified"
+    },
+    {
+      "filename": "packages/pg/package.json",
+      "status": "modified"
+    },
+    {
+      "filename": "tools/quality/releaseWorkflow.ts",
+      "status": "modified"
+    },
+    {
+      "filename": "tools/quality/test/releaseWorkflow.test.ts",
+      "status": "modified"
+    }
+  ]
+}

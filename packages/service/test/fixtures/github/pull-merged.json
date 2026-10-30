@@ -1,0 +1,28 @@
+{
+  "number": 18,
+  "title": "chore(release): version packages 0.1.0-alpha.2 (all five, spec 0008)",
+  "state": "closed",
+  "draft": false,
+  "merged": true,
+  "merge_commit_sha": "d9b4142daa9ce2ef958c9e11caade7b29977254f",
+  "mergeable": null,
+  "mergeable_state": "unknown",
+  "user": {
+    "id": 71797726,
+    "type": "User"
+  },
+  "head": {
+    "sha": "eda105434416af8eb3fcb9a78a09a2c4ba4944d0",
+    "ref": "chore/version-0.1.0-alpha.2",
+    "repo": {
+      "full_name": "phibkro/pg-txmode"
+    }
+  },
+  "base": {
+    "ref": "main",
+    "repo": {
+      "full_name": "phibkro/pg-txmode",
+      "default_branch": "main"
+    }
+  }
+}

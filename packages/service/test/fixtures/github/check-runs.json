@@ -1,0 +1,29 @@
+{
+  "total_count": 3,
+  "check_runs": [
+    {
+      "name": "check",
+      "status": "completed",
+      "conclusion": "skipped",
+      "app": {
+        "slug": "github-actions"
+      }
+    },
+    {
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "success",
+      "app": {
+        "slug": "github-actions"
+      }
+    },
+    {
+      "name": "checks",
+      "status": "completed",
+      "conclusion": "success",
+      "app": {
+        "slug": "github-actions"
+      }
+    }
+  ]
+}
