@@ -1,0 +1,25 @@
+{
+  "description": "Registered suppressions. Every live suppression directive (oxlint, eslint, ts-expect-error, ts-ignore, ts-nocheck, @effect-diagnostics) must match an entry by file and directive, and every entry needs a live suppression. An entry names its scope, reason, native alternatives examined, owner, versions and retirement trigger.",
+  "exceptions": [
+    {
+      "id": "EX-0001",
+      "scope": {
+        "files": ["apps/bot/src/worker.ts"],
+        "directives": ["@effect-diagnostics", "oxlint-disable-next-line"]
+      },
+      "reason": "The Cloudflare Workers host ABI is Promise-based: a Durable Object's RPC methods and `alarm()` and a Worker's `fetch` are `async` methods that the runtime calls. Two suppressions, both in `apps/bot/src/worker.ts`, the boundary adapter between that ABI and one ManagedRuntime per host (spec 0000, D11 and Revisions 5, 6): the file-level `@effect-diagnostics asyncFunction:off` for the language service, and one `oxlint-disable-next-line` per site for the two Oxlint rules that say the same thing: `effect/no-native-promise-control-flow` on the four `async` methods (the object's `deliver`, `alarm` and `fetch`, the Worker's `fetch`) and `effect/no-premature-execution` on the two `ManagedRuntime.make` calls. Every method body is one `runtime.runPromise` of an Effect, so no domain logic is async. No global `Cloudflare.Env` augmentation is used: the Worker's `fetch` takes `env` as its parameter.",
+      "nativeAlternativesExamined": [
+        "Alchemy v2's Effect-native Durable Object (`DurableObjectShape` with Effect-valued `fetch` and `alarm`): it hides the async ABI, but the local workerd smoke test of the whole webhook path (a Miniflare run of a `bun build` bundle) needs no Alchemy tooling with a plain class. The other reason, that PiHarness (spec 0001) mounts with `Lifecycle.install(host)` on a real `cloudflare:workers` DurableObject class, is anticipatory and does not carry this decision: spec 0001 does not exist yet.",
+        "Effect.promise / Effect.callback around the handlers: they wrap calls from Effect into Promises, the reverse of what the host needs; the host must return Promises to the platform.",
+        "A `declare global` for `Cloudflare.Env` (it needed `no-namespace`, `no-empty-interface`, `no-empty-object-type` and `consistent-type-imports` suppressed): not used; the Worker's `fetch` receives `env` as a parameter, so none of those four rules is suppressed."
+      ],
+      "owner": "apps/bot",
+      "versions": {
+        "effect": "4.1.0",
+        "@effect/tsgo": "0.63.0",
+        "alchemy": "2.0.0-beta.84"
+      },
+      "retirementTrigger": "Cloudflare's runtime accepts Effect-valued handlers directly, or this host moves to Alchemy's Effect-native Durable Object."
+    }
+  ]
+}

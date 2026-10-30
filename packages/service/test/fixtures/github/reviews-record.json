@@ -1,0 +1,24 @@
+[
+  {
+    "id": 5712894016,
+    "body": "<!-- review-round n=1 head=5c33160314856ba99191df2dcd0fa4a52c89a302 verdict=changes -->\n## Review round 1 on `5c33160`: changes\n",
+    "state": "COMMENTED",
+    "submitted_at": "2026-10-30T13:25:25Z",
+    "commit_id": "5c33160314856ba99191df2dcd0fa4a52c89a302",
+    "user": {
+      "id": 71797726,
+      "type": "User"
+    }
+  },
+  {
+    "id": 5712974986,
+    "body": "<!-- review-round n=2 head=303feaa54557b85775eed7b1c1df2a8742e1790c verdict=pass -->\n## Review round 2 on `303feaa`: pass\n",
+    "state": "COMMENTED",
+    "submitted_at": "2026-10-30T13:32:08Z",
+    "commit_id": "303feaa54557b85775eed7b1c1df2a8742e1790c",
+    "user": {
+      "id": 71797726,
+      "type": "User"
+    }
+  }
+]

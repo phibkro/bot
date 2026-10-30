@@ -1,8 +1,8 @@
 # bot
 
-A GitHub App that automates releases for the operator's repositories, hosted on the operator's Cloudflare account as a Durable Object. Read [`README.md`](README.md); [`STATE.md`](STATE.md) says which spec is active. This repository is **private**, but treat it as if it were public: no secret, no personal data in files, logs, fixtures, tests or evidence. Credentials appear as **names and lengths only**, never a value, even partly.
+A GitHub App that automates releases for the operator's repositories, hosted on the operator's Cloudflare account as a Durable Object. Read [`README.md`](README.md); [`STATE.md`](STATE.md) says which spec is active. This repository is source-available (all rights reserved): no secret, no personal data in files, logs, fixtures, tests or evidence. Credentials appear as **names and lengths only**, never a value, even partly.
 
-The lifecycle below is the projects tier's design-spec loop (`/srv/share/projects/AGENTS.md`). This file links facts that live in the spec; it does not copy them.
+The lifecycle below is the design-spec loop of the projects tier (its `AGENTS.md`, outside this repository). This file links facts that live in the spec; it does not copy them.
 
 ## How a change travels
 
@@ -14,8 +14,8 @@ spec → code → PR   (1:1)
 - **Plan and build are one step.** Revise the plan as the build teaches, as a dated entry in the spec's Revisions, never a silent edit. Stop only at an operator-owned fork (preference, authority, external effects: the App, its permissions, secrets, deploys).
 - **Freeze the spec when its PR opens.** The PR body is the report and ends with an empty `## Review rounds`; reviewers judge the plan, the code and their agreement.
 - **Never block on a merge.** Stack the next branch on the one below.
-- **Worktrees:** `/run/current-system/sw/bin/git worktree add .worktrees/<name> -b <branch>` (full path: a bare `git worktree` is rewritten by the harness). One writer per working directory. Commit by pathspec.
-- **Review loop and merge script:** step 2 copies `merge.sh` and `record-round.sh` into `.agents/skills/review-pr/` from `phibkro/pg-txmode`, changing only the provenance header (spec 0000, Revisions 2). Until then this repository has no copy.
+- **Worktrees:** `git worktree add .worktrees/<name> -b <branch>`. One writer per working directory. Commit by pathspec.
+- **Review loop and merge script:** `.agents/skills/review-pr/merge.sh` and `record-round.sh` are copies from `phibkro/pg-txmode`, changing only the provenance line (spec 0000, Revisions 2; see `PROVENANCE.md`). `merge.sh` is also the canonical file of the contract test: do not edit it here; a rule changes in its source repository first.
 
 ## What this repository is allowed to hold
 
@@ -25,7 +25,11 @@ spec → code → PR   (1:1)
 
 ## Stack
 
-TypeScript, Bun, Effect v4 (`>=4.1.0`), Oxfmt, Oxlint with the Effect plugin, Alchemy v2 for infrastructure; Cloudflare through `cf` where Alchemy has no resource (with `DO_NOT_TRACK=1`, secrets from stdin; the Wrangler exception of spec 0000, O3, if the operator keeps it). Native Effect: `HttpClient`, `effect/crypto` (`Mac`, `Signature`, `KeyFormat`), `Schema`, `Config`/`Redacted`, `Schedule`, `DateTime`; no `node:crypto`, `fetch`, `process.env`, global timers. Read `.agents/skills/effect-house/SKILL.md` and the installed `node_modules/effect/AGENTS.md` before writing code (the overlay is created in step 2).
+TypeScript, Bun, Effect v4 (`>=4.1.0`), Oxfmt, Oxlint with the Effect plugin, Alchemy v2 for infrastructure; Cloudflare through `cf` where Alchemy has no resource (with `DO_NOT_TRACK=1`, secrets from stdin; the Wrangler exception of spec 0000, O3, if the operator keeps it). Native Effect: `HttpClient`, `effect/crypto` (`Mac`, `Signature`, `KeyFormat`), `Schema`, `Config`/`Redacted`, `Schedule`, `DateTime`; no `node:crypto`, `fetch`, `process.env`, global timers. Read `.agents/skills/effect-house/SKILL.md` and the installed `node_modules/effect/AGENTS.md` before writing code.
+
+## Checks
+
+`devenv shell -- bun run ready` is the sequence: `check`, `check:effect`, `check:exceptions`, `check:docs`, `test`, `build`, `secrets` (`.agents/skills/effect-house/SKILL.md`). A reviewer runs it and the smoke (`bun run smoke`) from `.agents/skills/verify-bot/SKILL.md`. `bun run docs:gen` regenerates `docs/operator-checklist.md`; never edit it by hand.
 
 ## Conventions
 

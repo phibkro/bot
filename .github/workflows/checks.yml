@@ -1,0 +1,53 @@
+# Provenance: adapted from phibkro/pg-txmode @ 23be53c0c66a129540350697253b5c19abde3171 (.github/workflows/checks.yml). Deviations:
+# the steps with no counterpart here are dropped (release staging, knip, copy-paste detection); `Operator checklist` is added
+# (`check:docs`: the generated checklist equals the committed one); the commands and pins are the same.
+# Each step calls the root script of the same name (`bun run ready` is their sequence), never its command.
+# The job is named `checks`: it is the required status check of the repository's ruleset.
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+      - uses: cachix/install-nix-action@3c6342b75005b9cc7c7d4069c3e9179247c89012 # v31
+      - uses: cachix/cachix-action@97e5ff84d02b3b4f9936339f767e17f03c9252ed # v16
+        with:
+          name: devenv
+      - name: Install pinned devenv CLI
+        shell: bash
+        run: nix profile add github:cachix/devenv/b904dcb51fe48c30db250038241507f60752f222
+      - name: Install workspace dependencies
+        shell: bash
+        run: devenv shell -- bun install --frozen-lockfile
+      - name: Vite+ checks
+        shell: bash
+        run: devenv shell -- bun run check
+      - name: Effect diagnostics
+        shell: bash
+        run: devenv shell -- bun run check:effect
+      - name: Exception registry
+        shell: bash
+        run: devenv shell -- bun run check:exceptions
+      - name: Operator checklist
+        shell: bash
+        run: devenv shell -- bun run check:docs
+      - name: Workspace tests and the workerd smoke
+        shell: bash
+        run: devenv shell -- bun run test
+      - name: Build
+        shell: bash
+        run: devenv shell -- bun run build
+      - name: Full-history secret scan
+        shell: bash
+        run: devenv shell -- bun run secrets

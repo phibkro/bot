@@ -1,0 +1,41 @@
+[
+  {
+    "number": 18,
+    "title": "chore(release): version packages 0.1.0-alpha.2 (all five, spec 0008)",
+    "state": "closed",
+    "draft": false,
+    "merged_at": "2026-10-30T11:23:02Z",
+    "head": {
+      "sha": "eda105434416af8eb3fcb9a78a09a2c4ba4944d0"
+    },
+    "base": {
+      "ref": "main"
+    }
+  },
+  {
+    "number": 17,
+    "title": "fix(harness): fail the start when the watchdog cannot run, and close the release lows (spec 0008)",
+    "state": "closed",
+    "draft": false,
+    "merged_at": "2026-10-30T11:11:32Z",
+    "head": {
+      "sha": "7483606a4aae7319f3116f9d59da1b7076fb7358"
+    },
+    "base": {
+      "ref": "main"
+    }
+  },
+  {
+    "number": 16,
+    "title": "chore(release): version packages 0.1.0-alpha.1 (all five, spec 0007)",
+    "state": "closed",
+    "draft": false,
+    "merged_at": "2026-10-30T05:04:25Z",
+    "head": {
+      "sha": "b363da72a41253a18e9436700697cf7c09b06453"
+    },
+    "base": {
+      "ref": "main"
+    }
+  }
+]

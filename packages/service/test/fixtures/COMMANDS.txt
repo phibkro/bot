@@ -1,0 +1,11 @@
+gh api repos/phibkro/pg-txmode/pulls/18 | jq <project PR fields>
+gh api repos/phibkro/bot/pulls/1/reviews | jq <project review fields; body reduced to the marker line and a one-line title>
+gh api repos/phibkro/pg-txmode/compare/e74872140f547e1c205e442f186192d3cd8bb27d...d9b4142daa9ce2ef958c9e11caade7b29977254f (main is an ancestor of the head: behind_by 0)
+gh api repos/phibkro/pg-txmode/compare/d9b4142daa9ce2ef958c9e11caade7b29977254f...e74872140f547e1c205e442f186192d3cd8bb27d (main moved past the head: behind_by > 0)
+gh api repos/phibkro/pg-txmode/commits/d9b4142daa9ce2ef958c9e11caade7b29977254f/check-runs
+gh api repos/phibkro/pg-txmode/commits/d9b4142daa9ce2ef958c9e11caade7b29977254f/status
+gh api repos/phibkro/pg-txmode/contents/.agents/skills/review-pr/merge.sh?ref=main (content dropped; the blob sha stays)
+gh api repos/phibkro/pg-txmode/pulls?state=closed&per_page=3 | jq <project>
+curl https://registry.npmjs.org/@pg-txmode%2fcore/0.1.0-alpha.0 | jq <project; personal fields replaced>
+curl https://registry.npmjs.org/@pg-txmode%2fcore/0.1.0-alpha.1 | jq <project; personal fields replaced>
+curl https://registry.npmjs.org/@pg-txmode%2fcore/0.1.0-alpha.2 | jq <project; personal fields replaced>

@@ -1,0 +1,20 @@
+{
+  "name": "@pg-txmode/core",
+  "version": "0.1.0-alpha.2",
+  "dist": {
+    "attestations": {
+      "url": "https://registry.npmjs.org/-/npm/v1/attestations/@pg-txmode%2fcore@0.1.0-alpha.2",
+      "provenance": {
+        "predicateType": "https://slsa.dev/provenance/v1"
+      }
+    }
+  },
+  "_npmUser": {
+    "name": "GitHub Actions",
+    "email": "npm-oidc-no-reply@github.com",
+    "trustedPublisher": {
+      "id": "github",
+      "oidcConfigId": "9163bb1c-c70c-4a9e-9857-4ba97f14ad6a"
+    }
+  }
+}
