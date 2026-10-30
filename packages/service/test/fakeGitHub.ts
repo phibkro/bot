@@ -38,6 +38,29 @@ export interface WorldPull {
   files: { filename: string; status: string }[];
 }
 
+/** A simulated eviction: an effect that dies, set for one test and cleared before the retry. */
+export type Hook = (() => Effect.Effect<void>) | undefined;
+
+/** Run a write between its two eviction points: `before` when the call arrives, `after` once it took effect. */
+const around = <A, E>(
+  before: Hook,
+  after: Hook,
+  run: () => Effect.Effect<A, E>
+): Effect.Effect<A, E> =>
+  Effect.gen(function* () {
+    if (before !== undefined) {
+      yield* before();
+    }
+
+    const result = yield* run();
+
+    if (after !== undefined) {
+      yield* after();
+    }
+
+    return result;
+  });
+
 export interface World {
   pulls: Map<number, WorldPull>;
   checks: Map<
@@ -58,9 +81,19 @@ export interface World {
   writes: { op: string; detail: unknown }[];
   nextCommentId: number;
   nextRunId: number;
-  /** Hooks: run after a write took effect, to simulate an eviction between the call and its receipt. */
-  afterMerge: (() => Effect.Effect<void>) | undefined;
-  afterDispatch: (() => Effect.Effect<void>) | undefined;
+  /** When set, `merge-async` answers 400 with this message, and nothing merges. */
+  mergeRefusal: string | undefined;
+  /**
+   * Hooks that simulate an eviction at the two points of F14, for each action kind: `before*` runs when the call arrives, before
+   * it takes effect (the intent row exists, the write does not); `after*` runs once it took effect, before its answer returns
+   * (the write exists, the receipt does not).
+   */
+  beforeMerge: Hook;
+  afterMerge: Hook;
+  beforeDispatch: Hook;
+  afterDispatch: Hook;
+  beforeComment: Hook;
+  afterComment: Hook;
   now: () => string;
 }
 
@@ -80,12 +113,17 @@ export const makeWorld = (cfg: RepositoryConfig): World => {
   }
 
   return {
+    afterComment: undefined,
     afterDispatch: undefined,
     afterMerge: undefined,
+    beforeComment: undefined,
+    beforeDispatch: undefined,
+    beforeMerge: undefined,
     blobs,
     calls: [],
     checks: new Map(),
     mainHead: sha("0"),
+    mergeRefusal: undefined,
     nextCommentId: 1,
     nextMerge: sha("e"),
     nextRunId: 100,
@@ -187,44 +225,42 @@ export const fakeGitHub = (world: World) =>
           merge_base_commit: { sha: base === head ? base : base },
         });
       },
-      createComment: (_repo, number, body) => {
-        world.calls.push("createComment");
-        const pull = need(world, number);
-        const id = world.nextCommentId;
-        world.nextCommentId += 1;
-        pull.comments.push({ at: world.now(), authorId: 1, body, id });
-        world.writes.push({ detail: { body, number }, op: "createComment" });
+      createComment: (_repo, number, body) =>
+        around(world.beforeComment, world.afterComment, () => {
+          world.calls.push("createComment");
+          const pull = need(world, number);
+          const id = world.nextCommentId;
+          world.nextCommentId += 1;
+          pull.comments.push({ at: world.now(), authorId: 1, body, id });
+          world.writes.push({ detail: { body, number }, op: "createComment" });
 
-        return Effect.succeed(id);
-      },
-      dispatch: (_repo, input) => {
-        world.calls.push("dispatchWorkflow");
-        const runId = world.nextRunId;
-        world.nextRunId += 1;
+          return Effect.succeed(id);
+        }),
+      dispatch: (_repo, input) =>
+        around(world.beforeDispatch, world.afterDispatch, () => {
+          world.calls.push("dispatchWorkflow");
+          const runId = world.nextRunId;
+          world.nextRunId += 1;
 
-        const run: RunInfo = {
-          conclusion: null,
-          event: "workflow_dispatch",
-          head_branch: "main",
-          head_sha: world.mainHead,
-          html_url: `https://github.com/phibkro/pg-txmode/actions/runs/${runId}`,
-          id: runId,
-          status: "queued",
-        };
+          const run: RunInfo = {
+            conclusion: null,
+            event: "workflow_dispatch",
+            head_branch: "main",
+            head_sha: world.mainHead,
+            html_url: `https://github.com/phibkro/pg-txmode/actions/runs/${runId}`,
+            id: runId,
+            status: "queued",
+          };
 
-        world.runs.set(runId, run);
-        world.writes.push({ detail: input, op: "dispatchWorkflow" });
+          world.runs.set(runId, run);
+          world.writes.push({ detail: input, op: "dispatchWorkflow" });
 
-        const respond = Effect.succeed({
-          html_url: run.html_url,
-          run_url: `https://api.github.com/runs/${runId}`,
-          workflow_run_id: runId,
-        });
-
-        return world.afterDispatch === undefined
-          ? respond
-          : world.afterDispatch().pipe(Effect.andThen(respond));
-      },
+          return Effect.succeed({
+            html_url: run.html_url,
+            run_url: `https://api.github.com/runs/${runId}`,
+            workflow_run_id: runId,
+          });
+        }),
       fileText: (_repo, path, ref) => {
         world.calls.push("getContent");
 
@@ -321,41 +357,44 @@ export const fakeGitHub = (world: World) =>
           )
         );
       },
-      merge: (repo, request): Effect.Effect<MergeOutcome, GitHubFailure> => {
-        world.calls.push("mergeAsync");
-        const pull = need(world, request.number);
-        world.writes.push({
-          detail: {
-            number: request.number,
-            sha: request.sha,
-            title: request.title,
-          },
-          op: "mergeAsync",
-        });
-
-        if (pull.headSha !== request.sha || !pull.open) {
-          return Effect.succeed({
-            _tag: "Failed",
-            message: "head did not match",
+      merge: (repo, request): Effect.Effect<MergeOutcome, GitHubFailure> =>
+        around(world.beforeMerge, world.afterMerge, () => {
+          world.calls.push("mergeAsync");
+          const pull = need(world, request.number);
+          world.writes.push({
+            detail: {
+              number: request.number,
+              sha: request.sha,
+              title: request.title,
+            },
+            op: "mergeAsync",
           });
-        }
 
-        pull.merged = true;
-        pull.open = false;
-        pull.mergeCommitSha = world.nextMerge;
-        world.mainHead = world.nextMerge;
+          if (world.mergeRefusal !== undefined) {
+            return Effect.succeed<MergeOutcome>({
+              _tag: "Rejected",
+              message: world.mergeRefusal,
+            });
+          }
 
-        const done = Effect.succeed({
-          _tag: "Merged",
-          sha: world.nextMerge,
-        } as const);
+          if (pull.headSha !== request.sha || !pull.open) {
+            return Effect.succeed<MergeOutcome>({
+              _tag: "Failed",
+              message: "head did not match",
+            });
+          }
 
-        void repo;
+          pull.merged = true;
+          pull.open = false;
+          pull.mergeCommitSha = world.nextMerge;
+          world.mainHead = world.nextMerge;
+          void repo;
 
-        return world.afterMerge === undefined
-          ? done
-          : world.afterMerge().pipe(Effect.andThen(done));
-      },
+          return Effect.succeed<MergeOutcome>({
+            _tag: "Merged",
+            sha: world.nextMerge,
+          });
+        }),
     })
   );
 

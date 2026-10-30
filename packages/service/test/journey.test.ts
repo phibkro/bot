@@ -307,10 +307,113 @@ describe("merge journeys", () => {
       }).pipe(Effect.provide(botStack(world, [actCfg])));
     }
   );
+
+  it.effect(
+    "F14: an eviction after the merge intent, before the call, leaves exactly one merge after the retry",
+    () => {
+      const world = makeWorld(actCfg);
+      addPull(world, { number: 7 });
+      world.beforeMerge = () =>
+        Effect.die("evicted after the intent, before the call");
+
+      return Effect.gen(function* () {
+        yield* deliver("d1", pullHint(7));
+        yield* alarm;
+        assert.deepStrictEqual(writesOf(world, "mergeAsync"), []);
+        world.beforeMerge = undefined;
+        yield* TestClock.adjust("2 minutes");
+        yield* alarm;
+        assert.strictEqual(writesOf(world, "mergeAsync").length, 1);
+        const audit = yield* ReleaseLedger.use((ledger) => ledger.auditEntries);
+        assert.isTrue(audit.some((entry) => entry.kind === "work-failed"));
+      }).pipe(Effect.provide(botStack(world, [actCfg])));
+    }
+  );
+
+  it.effect(
+    "F14: an eviction before the comment call leaves exactly one comment after the retry",
+    () => {
+      const world = makeWorld(actCfg);
+      addPull(world, { number: 7 });
+      world.blobs.set(".agents/skills/review-pr/merge.sh", sha("7"));
+      world.beforeComment = () =>
+        Effect.die("evicted after the intent, before the call");
+
+      return Effect.gen(function* () {
+        yield* deliver("d1", pullHint(7));
+        yield* alarm;
+        assert.deepStrictEqual(writesOf(world, "createComment"), []);
+        world.beforeComment = undefined;
+        yield* TestClock.adjust("2 minutes");
+        yield* alarm;
+        assert.strictEqual(writesOf(world, "createComment").length, 1);
+      }).pipe(Effect.provide(botStack(world, [actCfg])));
+    }
+  );
+
+  it.effect(
+    "F14: an eviction after the comment was posted, before its receipt, adds no second comment (the read-back)",
+    () => {
+      const world = makeWorld(actCfg);
+      addPull(world, { number: 7 });
+      world.blobs.set(".agents/skills/review-pr/merge.sh", sha("7"));
+      world.afterComment = () =>
+        Effect.die("evicted after the call, before the receipt");
+
+      return Effect.gen(function* () {
+        yield* deliver("d1", pullHint(7));
+        yield* alarm;
+        assert.strictEqual(writesOf(world, "createComment").length, 1);
+        world.afterComment = undefined;
+        yield* TestClock.adjust("2 minutes");
+        yield* alarm;
+        assert.strictEqual(writesOf(world, "createComment").length, 1);
+      }).pipe(Effect.provide(botStack(world, [actCfg])));
+    }
+  );
+
+  it.effect(
+    "a refused merge (400) is final for that head: one comment, no second call, however often it is told; a new head is a new key",
+    () => {
+      const world = makeWorld(actCfg);
+      const pull = addPull(world, { number: 7 });
+      world.mergeRefusal = "Pull Request is not mergeable";
+
+      return Effect.gen(function* () {
+        yield* deliver("d1", pullHint(7));
+        yield* alarm;
+        yield* deliver("d2", pullHint(7), "check_run");
+        yield* alarm;
+        yield* TestClock.adjust("2 minutes");
+        yield* alarm;
+        assert.strictEqual(writesOf(world, "mergeAsync").length, 1);
+        assert.strictEqual(writesOf(world, "createComment").length, 1);
+        const sql = yield* SqlClient.SqlClient;
+
+        const receipts = yield* sql<{
+          readonly key: string;
+          readonly receipt: string | null;
+        }>`SELECT key, receipt FROM rb_actions WHERE kind = 'merge'`;
+
+        assert.deepStrictEqual(
+          receipts.map((row) => row.key),
+          [`merge:${repoName}#7@${pull.headSha}`]
+        );
+        assert.include(receipts[0]?.receipt ?? "", "rejected:");
+      }).pipe(Effect.provide(botStack(world, [actCfg])));
+    }
+  );
 });
 
 describe("release journeys", () => {
   const mergeSha = sha("e");
+
+  const greenChecks = {
+    app: "github-actions",
+    conclusion: "success",
+    name: "checks",
+    status: "completed",
+  } as const;
 
   it.effect(
     "F7, F8 and F17: dispatch, one approval link, one report with the publisher per package",
@@ -559,6 +662,57 @@ describe("release journeys", () => {
         const open = yield* ReleaseLedger.use((ledger) => ledger.openRuns);
         assert.strictEqual(open.length, 1);
       }).pipe(Effect.provide(botStack(world, [actCfg])));
+    }
+  );
+
+  it.effect(
+    "F14: an eviction after the dispatch intent, before the call, leaves exactly one dispatch after the retry",
+    () => {
+      const world = makeWorld(actCfg);
+      versionPr(world, 18, sha("c"), mergeSha);
+      world.mainHead = mergeSha;
+      world.checks.set(mergeSha, [greenChecks]);
+      world.beforeDispatch = () =>
+        Effect.die("evicted after the intent, before the call");
+
+      return Effect.gen(function* () {
+        yield* deliver("d1", pullHint(18));
+        yield* alarm;
+        assert.deepStrictEqual(writesOf(world, "dispatchWorkflow"), []);
+        world.beforeDispatch = undefined;
+        yield* TestClock.adjust("2 minutes");
+        yield* alarm;
+        assert.strictEqual(writesOf(world, "dispatchWorkflow").length, 1);
+        const open = yield* ReleaseLedger.use((ledger) => ledger.openRuns);
+        assert.strictEqual(open.length, 1);
+      }).pipe(Effect.provide(botStack(world, [actCfg])));
+    }
+  );
+
+  it.effect(
+    "F11: a merged version PR in observe mode dispatches nothing and says nothing; the verdict is NotActing",
+    () => {
+      const world = makeWorld(observeCfg);
+      versionPr(world, 18, sha("c"), mergeSha);
+      world.mainHead = mergeSha;
+      world.checks.set(mergeSha, [greenChecks]);
+
+      return Effect.gen(function* () {
+        yield* deliver("d1", pullHint(18));
+        yield* alarm;
+        yield* TestClock.adjust("2 minutes");
+        yield* alarm;
+        assert.deepStrictEqual(world.writes, []);
+        const audit = yield* ReleaseLedger.use((ledger) => ledger.auditEntries);
+
+        const verdict = audit.find(
+          (entry) => entry.kind === "dispatch-verdict"
+        );
+
+        assert.isDefined(verdict);
+        assert.include(verdict?.detail ?? "", "NotActing");
+        assertDeclaredOnly(world);
+      }).pipe(Effect.provide(botStack(world, [observeCfg])));
     }
   );
 

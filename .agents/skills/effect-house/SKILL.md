@@ -34,7 +34,7 @@ Dependencies point down only (`apps → service → rules`). `@bot/*` imports go
 | A narration of a report (spec 0001) | `Narrator`, with a `none` layer today | `Narrator.ts` |
 | A total deterministic decision | a plain function | `packages/rules` |
 
-Two writes are the load-bearing ones: **intent before effect** (`ReleaseLedger.claimAction` before a merge or a dispatch, `recordReceipt` after) and **webhooks are hints** (a delivery marks an item dirty; the evaluation re-reads GitHub). Durability: the ledger is SQLite in the Durable Object, committed before the delivery is answered; an alarm is delivered at least once, so every write is idempotent by its key.
+Two writes are the load-bearing ones: **intent before effect** (`ReleaseLedger.claimAction` before a merge or a dispatch, `recordReceipt` after; `recordMerge` writes a merge's receipt and its release lock in one transaction) and **webhooks are hints** (a delivery marks an item dirty; the evaluation re-reads GitHub). The `act` gate is in `mergeIt` and `dispatchIt`, where the write happens, as well as in the verdict. Durability: the ledger is SQLite in the Durable Object, committed before the delivery is answered; an alarm is delivered at least once, so every write is idempotent by its key.
 
 ## Composition roots
 
@@ -43,7 +43,7 @@ Exactly two, both in `apps/bot/src/worker.ts`, each one `ManagedRuntime`:
 - the Worker's **ingress** runtime (`ingressLayer`): verify the signature, decode the envelope, apply the allowlist, route to the object;
 - the Durable Object's **bot** runtime (`botLayer(env, storage)`): the full service graph over the object's SQLite storage.
 
-The Worker's `fetch`, the object's `deliver`, `alarm` and `fetch` are `async` because the Workers ABI is Promise-based (**EX-0001**, `tools/quality/exceptions.json`). Each method body is one `runtime.runPromise` of an Effect. No other module runs an effect.
+The Worker's `fetch`, the object's `deliver`, `alarm` and `fetch` are `async` because the Workers ABI is Promise-based (**EX-0001**, `tools/quality/exceptions.json`): the file-level `@effect-diagnostics asyncFunction:off` and one `oxlint-disable-next-line` per site (`effect/no-native-promise-control-flow` on the four methods, `effect/no-premature-execution` on the two `ManagedRuntime.make` calls). The Worker's ingress runtime is built once per `env` (the platform passes `env` to `fetch`; no global `Cloudflare.Env` augmentation). Each method body is one `runtime.runPromise` of an Effect. No other module runs an effect.
 
 ## Diagnostics and lint
 

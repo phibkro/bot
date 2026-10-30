@@ -8,7 +8,7 @@ Every file copied or adapted from another repository carries a header naming its
 | --- | --- | --- |
 | `.agents/skills/review-pr/merge.sh` | `.agents/skills/review-pr/merge.sh` | line 2 only (the provenance line); the body is byte-identical. Its blob hash, minus that line, is the pin in `packages/rules/src/config.ts` that the bot compares against each repository's copy (spec 0000, D2) |
 | `.agents/skills/review-pr/record-round.sh` | `.agents/skills/review-pr/record-round.sh` | line 2 only |
-| `packages/rules/test/fixtures/merge.sh` | the same `merge.sh` | none: the contract test runs this exact file (sha256 `3819dd69…2248236`) |
+| `packages/rules/test/fixtures/merge.sh` | **`phibkro/vektorprogrammet-reimagined`**, the origin (blob `8d6d628300c739067e2bf8f36e2f27450ac22f17`, its pin in `config.ts`), not pg-txmode's copy | none: no provenance line; the contract test runs this exact file (sha256 `3819dd69…2248236`). The vendored `.agents/skills/review-pr/merge.sh` is pg-txmode's copy of the same body |
 | `tools/quality/exceptions.ts`, `checkExceptions.ts`, `test/*`, `vite.config.ts`, `tsconfig.json`, `package.json` | `tools/quality/*` | `exceptions.ts`: the directive pattern also matches the Effect language service's own suppression comments (EX-0001 uses one) |
 | `tools/quality/exceptions.json` | the registry format | the entries are this repository's: EX-0001 |
 | `.github/workflows/checks.yml` | `.github/workflows/checks.yml` | steps with no counterpart here are dropped (release staging, knip, copy-paste detection); `Operator checklist` is added |

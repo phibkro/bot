@@ -1,10 +1,13 @@
 import { describe, expect, test } from "vite-plus/test";
 
 import {
+  allowedAccounts,
   classifyPublisher,
   decideDispatch,
   inert,
+  operatorIds,
   parseRecord,
+  passRecordFor,
   releaseLock,
   renderComment,
 } from "../src/index.ts";
@@ -282,5 +285,24 @@ describe("classifyPublisher", () => {
       classifyPublisher({ _npmUser: { email: "x@example.invalid", name: "x" } })
     ).toBe("token");
     expect(classifyPublisher(undefined)).toBe("not-published");
+  });
+});
+
+describe("the operator identity is pinned in the code path (spec 0000, O2 and O6)", () => {
+  test("a pass is trusted from account id 71797726 only, and the allowlist holds phibkro and tsukuri-labs", () => {
+    expect(operatorIds).toEqual([71_797_726]);
+    expect(allowedAccounts.map((account) => account.id)).toEqual([
+      71_797_726, 349_117_663,
+    ]);
+    expect(
+      passRecordFor(head, operatorIds, [
+        { ...passRecord, authorId: 71_797_726 },
+      ])._tag
+    ).toBe("Pass");
+    expect(
+      passRecordFor(head, operatorIds, [
+        { ...passRecord, authorId: 71_797_727 },
+      ])._tag
+    ).toBe("Author");
   });
 });

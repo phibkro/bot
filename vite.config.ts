@@ -94,12 +94,11 @@ export default defineConfig({
         },
       },
       {
-        // The Worker host: Promise-based by the platform's ABI (a Durable Object's RPC methods and `alarm`, a Worker's `fetch`),
-        // and `env` is typed by the global `Cloudflare.Env` interface, which its own bindings join (EX-0001).
+        // The Worker host: a Durable Object's RPC methods and `alarm` read nothing from `this` in some methods (EX-0001 covers the
+        // Promise-based ABI itself, per site, in the file).
         files: ["apps/bot/src/worker.ts"],
         rules: {
           "eslint/class-methods-use-this": "off",
-          "typescript/no-namespace": "off",
         },
       },
       {

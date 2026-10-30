@@ -1,17 +1,20 @@
 import { SqliteClient } from "@effect/sql-sqlite-bun";
 import { assert, describe, it } from "@effect/vitest";
-import { Effect, Layer } from "effect";
+import { Effect, Exit, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import { TestClock } from "effect/testing";
 
 import { ReleaseLedger } from "../src/index.ts";
-import type { Hint } from "../src/index.ts";
+import type { ClaimResult, Hint } from "../src/index.ts";
 
 /** The ledger on a real SQLite database (spec 0000, D9): admission, work, intent-before-effect, audit, records. */
 
 const layer = ReleaseLedger.layer.pipe(
   Layer.provideMerge(SqliteClient.layer({ filename: ":memory:" }))
 );
+
+const receiptOf = (claim: ClaimResult): string | undefined =>
+  claim._tag === "Exists" ? claim.receipt : undefined;
 
 const pull: Hint = { _tag: "Pull", number: 7, repository: "o/r" };
 
@@ -128,6 +131,48 @@ describe("actions (intent before effect)", () => {
           (yield* ledger.claimAction("k1", "dispatch"))._tag,
           "Exists"
         );
+      }).pipe(Effect.provide(layer))
+  );
+
+  it.effect(
+    "F9, F14: the merge receipt and the release lock are one transaction; a failing lock write leaves no receipt",
+    () =>
+      Effect.gen(function* () {
+        const ledger = yield* ReleaseLedger;
+        const sql = yield* SqlClient.SqlClient;
+
+        const lock = {
+          finalHeadSha: "a".repeat(40),
+          mergeSha: "b".repeat(40),
+          mergedAt: 1,
+          prNumber: 18,
+          repository: "o/r",
+          title: "chore(release): version packages",
+        };
+
+        yield* ledger.claimAction("m1", "merge");
+        yield* ledger.recordMerge("m1", "merged:b", lock);
+        assert.deepStrictEqual((yield* ledger.getLock("o/r"))?.prNumber, 18);
+        assert.deepStrictEqual(
+          receiptOf(yield* ledger.claimAction("m1", "merge")),
+          "merged:b"
+        );
+
+        // The lock write fails inside the transaction (a trigger, as a full disk or an eviction would): the receipt is rolled back.
+        yield* sql`CREATE TRIGGER refuse_lock BEFORE INSERT ON rb_locks BEGIN SELECT RAISE(ABORT, 'no lock'); END`;
+        yield* ledger.clearLock("o/r");
+        yield* ledger.claimAction("m2", "merge");
+
+        const failed = yield* Effect.exit(
+          ledger.recordMerge("m2", "merged:c", { ...lock, prNumber: 19 })
+        );
+
+        assert.isTrue(Exit.isFailure(failed));
+        assert.strictEqual(
+          receiptOf(yield* ledger.claimAction("m2", "merge")),
+          undefined
+        );
+        assert.isUndefined(yield* ledger.getLock("o/r"));
       }).pipe(Effect.provide(layer))
   );
 });

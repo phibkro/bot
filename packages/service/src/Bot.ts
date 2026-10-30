@@ -295,6 +295,11 @@ export class Bot extends Context.Service<
         pull: Pull,
         verdict: Extract<MergeVerdict, { _tag: "Merge" }>
       ) {
+        // The gate is here, where the write happens (F11); the caller also stops an observe-mode verdict before it claims a key.
+        if (cfg.mode !== "act") {
+          return;
+        }
+
         const key = `merge:${cfg.fullName}#${pull.number}@${verdict.sha}`;
         const claim = yield* ledger.claimAction(key, "merge");
 
@@ -312,21 +317,25 @@ export class Bot extends Context.Service<
         yield* audit("merge-outcome", cfg.fullName, `#${pull.number}`, outcome);
 
         if (outcome._tag === "Merged") {
-          yield* ledger.recordReceipt(key, `merged:${outcome.sha}`);
-
-          if (
+          const startsRelease =
             cfg.release !== undefined &&
-            pull.title.startsWith(cfg.release.versionTitlePrefix)
-          ) {
-            yield* ledger.setLock({
-              finalHeadSha: verdict.sha,
-              mergeSha: outcome.sha,
-              mergedAt: yield* now,
-              prNumber: pull.number,
-              repository: cfg.fullName,
-              title: pull.title,
-            });
-          }
+            pull.title.startsWith(cfg.release.versionTitlePrefix);
+
+          // One transaction: an eviction cannot leave the receipt without the release lock (F9, F14).
+          yield* ledger.recordMerge(
+            key,
+            `merged:${outcome.sha}`,
+            startsRelease
+              ? {
+                  finalHeadSha: verdict.sha,
+                  mergeSha: outcome.sha,
+                  mergedAt: yield* now,
+                  prNumber: pull.number,
+                  repository: cfg.fullName,
+                  title: pull.title,
+                }
+              : undefined
+          );
 
           yield* ledger.enqueue(
             { _tag: "Pull", number: pull.number, repository: cfg.fullName },
@@ -338,6 +347,8 @@ export class Bot extends Context.Service<
             (yield* now) + 30_000
           );
         } else {
+          // A refusal (400) or a failed poll is final for this head: the receipt closes the key, one comment tells the operator,
+          // and a new head is a new key. Nothing re-asks GitHub about the same head (spec 0000, Revisions 6).
           yield* ledger.recordReceipt(
             key,
             `${outcome._tag.toLowerCase()}:${outcome.message}`
@@ -595,7 +606,9 @@ export class Bot extends Context.Service<
         mergeSha: string,
         mode: "check" | "publish"
       ) {
-        if (cfg.release === undefined) {
+        // The gate is here, where the write happens, and not only in the verdict that led here: nothing reaches `workflow_dispatch`
+        // from a repository that is not in `act` mode, whatever `decideDispatch` was given (F11).
+        if (cfg.release === undefined || cfg.mode !== "act") {
           return;
         }
 

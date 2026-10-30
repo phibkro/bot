@@ -164,7 +164,15 @@ export class ReleaseLedger extends Context.Service<
       repository: string,
       mergeSha: string
     ) => Effect.Effect<readonly RunRecord[]>;
-    readonly setLock: (lock: ReleaseLock) => Effect.Effect<void>;
+    /**
+     * The receipt of a merge and, for a version PR, the release lock it starts, in one transaction: an eviction cannot leave the
+     * receipt without the lock, so the dispatch stays guarded by it (F9, F14).
+     */
+    readonly recordMerge: (
+      key: string,
+      receipt: string,
+      lock: ReleaseLock | undefined
+    ) => Effect.Effect<void>;
     readonly getLock: (
       repository: string
     ) => Effect.Effect<ReleaseLock | undefined>;
@@ -395,6 +403,19 @@ export class ReleaseLedger extends Context.Service<
             ),
             Effect.orDie
           ),
+        recordMerge: (key, receipt, lock) =>
+          sql
+            .withTransaction(
+              Effect.gen(function* () {
+                const at = yield* now;
+                yield* sql`UPDATE rb_actions SET receipt = ${receipt}, receipt_at = ${at} WHERE key = ${key}`;
+
+                if (lock !== undefined) {
+                  yield* sql`INSERT INTO rb_locks (repository, pr_number, merge_sha, final_head_sha, title, merged_at) VALUES (${lock.repository}, ${lock.prNumber}, ${lock.mergeSha}, ${lock.finalHeadSha}, ${lock.title}, ${lock.mergedAt}) ON CONFLICT (repository) DO UPDATE SET pr_number = excluded.pr_number, merge_sha = excluded.merge_sha, final_head_sha = excluded.final_head_sha, title = excluded.title, merged_at = excluded.merged_at`;
+                }
+              })
+            )
+            .pipe(Effect.orDie),
         recordReceipt: (key, receipt) =>
           Effect.gen(function* () {
             const at = yield* now;
@@ -425,11 +446,6 @@ export class ReleaseLedger extends Context.Service<
           ),
         setFlag: (key, value) =>
           sql`INSERT INTO rb_flags (key, value) VALUES (${key}, ${value}) ON CONFLICT (key) DO UPDATE SET value = excluded.value`.pipe(
-            Effect.orDie,
-            Effect.asVoid
-          ),
-        setLock: (lock) =>
-          sql`INSERT INTO rb_locks (repository, pr_number, merge_sha, final_head_sha, title, merged_at) VALUES (${lock.repository}, ${lock.prNumber}, ${lock.mergeSha}, ${lock.finalHeadSha}, ${lock.title}, ${lock.mergedAt}) ON CONFLICT (repository) DO UPDATE SET pr_number = excluded.pr_number, merge_sha = excluded.merge_sha, final_head_sha = excluded.final_head_sha, title = excluded.title, merged_at = excluded.merged_at`.pipe(
             Effect.orDie,
             Effect.asVoid
           ),
