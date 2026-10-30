@@ -1,0 +1,13 @@
+node_modules/
+.devenv/
+.direnv/
+.worktrees/
+.alchemy/
+dist/
+coverage/
+*.log
+*.pem
+.dev.vars
+.env
+.env.*
+.DS_Store
