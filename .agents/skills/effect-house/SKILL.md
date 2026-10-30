@@ -5,7 +5,7 @@ description: "The bot repository's Effect overlay: its constructs, its two compo
 
 # Effect house: bot
 
-Read `/srv/share/projects/AGENTS.md` ("Effect-first"), then the installed guidance (`packages/service/node_modules/effect/AGENTS.md` and the `ai-docs/src` examples it links; Effect `4.1.0` here), then this file. The decision ladder and the exception lifecycle are the projects tier's; this file names what is specific to this repository.
+Read the projects tier's `AGENTS.md` (outside this repository; "Effect-first"), then the installed guidance (`packages/service/node_modules/effect/AGENTS.md` and the `ai-docs/src` examples it links; Effect `4.1.0` here), then this file. The decision ladder and the exception lifecycle are the projects tier's; this file names what is specific to this repository.
 
 ## Layers of the code (libraries, services, platform integrations)
 

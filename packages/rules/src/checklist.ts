@@ -149,7 +149,7 @@ App settings, Webhook URL: \`<Worker URL>/webhook/github\`. Then "Advanced", "Re
 
 Every repository starts in \`observe\` mode: the bot decides and writes its verdicts to its audit log and writes nothing to GitHub. Compare its
 verdicts with your \`merge.sh\` runs for as long as you choose, then switch one repository at a time with a PR that changes \`mode\` in
-\`packages/rules/src/config.ts\` to \`act\`. Before \`phibkro/vektorprogrammet-reimagined\` goes to \`act\`, protect its \`main\` (required check \`checks\`): today nothing but the bot's rules would stand between a pass record and the merge there.
+\`packages/rules/src/config.ts\` to \`act\`. Before a repository goes to \`act\`, protect its \`main\` (required check \`checks\`) if it is not: without that, only the bot's rules stand between a pass record and the merge.
 
 ## 7. The live journey (falsifier F19)
 

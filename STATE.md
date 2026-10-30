@@ -17,9 +17,8 @@ Blocked:
 
 - The operator's manual steps (the checklist): none can be done by an agent.
 - The live journey (falsifier F19) and the real-API capture for F20 need the operator's throwaway repository and the installed App.
-- **O7** (branch protection on `vektorprogrammet-reimagined`) stays with the lead and the operator; do not move that repository to `act` before it is decided.
+- **O7:** branch protection is a precondition for `act` mode in each repository; check it before a repository's `mode` becomes `act`.
 
 Observations to fix on touch:
 
-- `phibkro/vektorprogrammet-reimagined` has no branch protection and its `main` shows a failed `checks` run (read 2026-10-30).
 - `merge.sh` accepts a pass marker from any commenter on a public repository, and merges when no check has registered yet (spec 0000, D3, V1 and V4). The bot tightens both; the scripts themselves are unchanged.

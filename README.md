@@ -1,6 +1,6 @@
 # bot
 
-A GitHub App that automates releases for the operator's repositories, hosted on the operator's Cloudflare account as a Durable Object. This repository is **private**: no secret, no personal data in files, logs or fixtures (names and lengths only).
+A GitHub App that automates releases for the operator's repositories, hosted on the operator's Cloudflare account as a Durable Object. This repository is source-available (all rights reserved): no secret, no personal data in files, logs or fixtures (names and lengths only).
 
 ```text
 reviewed PR ── green CI ──▶ bot merges that exact head ──▶ (version PR) bot dispatches release.yml
